@@ -1,215 +1,90 @@
-<!--
-Filename: index.html
-Type: code/html
-Description: Static single-file site (HTML + CSS + JS) inspired by greenlinepoker.com visuals
-Notes: This is an original design *inspired by* the requested site, NOT a pixel-perfect copy of any copyrighted page.
-
-Instructions:
-1. Deploy this file to GitHub Pages (put as index.html in the repo root and enable Pages).
-2. Deploy the Cloudflare Worker code below to create a CORS-friendly proxy for the SMS API.
-3. Update PROXY_URL in the script section (or set PROXY_URL in the Worker routes) and enjoy.
--->
-
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Greenline — Проверка кода</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Greenline Code Fetcher</title>
   <style>
-    /* Simple responsive layout inspired by a poker site look: dark header, large hero, card-like panel */
-    :root{
-      --bg:#0f1720; --card:#0b1220; --accent:#1fb6ff; --muted:#9aa6b2; --glass: rgba(255,255,255,0.03);
-      --maxw:1100px;
+    body {
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial; background:linear-gradient(180deg,#071018 0%, #0b1320 100%); color:#e6eef6; -webkit-font-smoothing:antialiased}
-    header{background:linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0)); padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.03)}
-    .container{max-width:var(--maxw); margin:28px auto; padding:0 20px}
-    .brand{display:flex;align-items:center;gap:12px}
-    .logo{width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#083045,var(--accent));display:flex;align-items:center;justify-content:center;font-weight:700}
-    .brand h1{font-size:18px;margin:0}
-
-    .hero{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start;margin-top:28px}
-    .hero-left{padding:28px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0));border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
-    .hero-left h2{margin:0 0 12px;font-size:28px}
-    .hero-left p{color:var(--muted);margin:0 0 18px}
-
-    .panel{background:var(--card); padding:18px;border-radius:10px;box-shadow:0 6px 30px rgba(3,8,15,0.6); border:1px solid rgba(255,255,255,0.025)}
-    .form-row{display:flex;gap:8px}
-    input[type=text]{flex:1;padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit;outline:none}
-    button{padding:12px 14px;border-radius:8px;border:0;background:var(--accent);color:#03202a;font-weight:700;cursor:pointer}
-    .muted{color:var(--muted);font-size:14px}
-
-    .code-box{margin-top:12px;padding:16px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0));border:1px dashed rgba(255,255,255,0.03);min-height:56px}
-
-    footer{margin:40px auto 80px; color:var(--muted);text-align:center}
-    @media (max-width:900px){.hero{grid-template-columns:1fr;}.hero-right{order:-1}}
+    header {
+      width: 100%;
+      background-color: #000;
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      border-bottom: 1px solid #111;
+    }
+    header img {
+      height: 50px;
+    }
+    main {
+      margin-top: 50px;
+      text-align: center;
+    }
+    input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      margin-right: 10px;
+      width: 250px;
+    }
+    button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      border: none;
+      background-color: #0f0;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #0c0;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #0f0;
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="container">
-      <div class="brand">
-        <div class="logo">GL</div>
-        <div>
-          <h1>Greenline — Получение кода</h1>
-          <div class="muted">Простой инструмент для получения кода по mailId через API</div>
-        </div>
-      </div>
-    </div>
+    <img src="greenlinelogo.png" alt="Greenline Logo">
   </header>
-
-  <main class="container">
-    <div class="hero">
-      <section class="hero-left panel">
-        <h2>Введите mailId и получите код</h2>
-        <p>Этот интерфейс отправляет запрос к API (через CORS-прокси) и отображает код. Используется безопасный прокси-эндпоинт, чтобы обойти ограничения браузера.</p>
-
-        <div style="margin-top:12px">
-          <label class="muted">Mail ID</label>
-          <div class="form-row" style="margin-top:8px">
-            <input type="text" id="mailId" placeholder="Например: 1234567890abcdef">
-            <button id="btnGet">Получить</button>
-          </div>
-
-          <div class="code-box" id="result">Результат появится здесь</div>
-
-          <div style="margin-top:12px" class="muted">Примечание: разверните CORS-прокси (Cloudflare Worker или другой) и укажите его URL в настройке PROXY_URL в коде.</div>
-        </div>
-      </section>
-
-      <aside class="hero-right panel">
-        <h3 style="margin-top:0">Быстрая помощь</h3>
-        <ul class="muted">
-          <li>Если API блокирует CORS — используйте прокси</li>
-          <li>Для продакшена — не храните API-ключи в клиентском JS</li>
-          <li>Можно добавить ограничение по скорости и капчу на прокси</li>
-        </ul>
-        <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.02)">
-        <div class="muted">Demo API URL template:</div>
-        <div style="word-break:break-all;margin-top:8px;color:var(--accent);font-weight:600">https://smsbower.online/api/mail/getCode?api_key=3QXiCWhnsKxYnqdyI8wgQOju7DX7LXsR&mailId=&lt;mailId&gt;</div>
-      </aside>
-    </div>
-
-    <section style="margin-top:22px" class="panel">
-      <h3 style="margin:0 0 10px">Лог</h3>
-      <div id="log" style="min-height:80px;color:var(--muted);white-space:pre-wrap"></div>
-    </section>
+  <main>
+    <h1>Получить код</h1>
+    <input type="text" id="mailId" placeholder="Введите mailId">
+    <button onclick="getCode()">Получить</button>
+    <div id="result"></div>
   </main>
-
-  <footer>
-    <div class="container">Сделано с ❤ — оригинальный дизайн, вдохновлённый доком. Не копируйте точь-в-точь защищённые сайты.</div>
-  </footer>
-
   <script>
-    // ====== CONFIGURATION ======
-    // Replace PROXY_URL with your deployed Cloudflare Worker URL or other proxy endpoint.
-    // Example: https://your-worker.your-domain.workers.dev/api/getCode
-    const PROXY_URL = 'https://your-cf-worker.example.workers.dev/api/getCode';
+    const PROXY_URL = 'https://your-cf-worker.example.workers.dev/api/getCode'; // замените на адрес вашего Cloudflare Worker
 
-    // The public API (for reference):
-    // https://smsbower.online/api/mail/getCode?api_key=3QXiCWhnsKxYnqdyI8wgQOju7DX7LXsR&mailId=<mailId>
-    // We'll call the proxy instead: `${PROXY_URL}?mailId=${mailId}`
-
-    const btn = document.getElementById('btnGet');
-    const mailInput = document.getElementById('mailId');
-    const resultBox = document.getElementById('result');
-    const logBox = document.getElementById('log');
-
-    function log(msg){
-      const t = new Date().toLocaleString();
-      logBox.textContent = `[${t}] ${msg}\n` + logBox.textContent;
-    }
-
-    btn.addEventListener('click', getCode);
-    mailInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') getCode(); });
-
-    async function getCode(){
-      const mailId = mailInput.value.trim();
-      if(!mailId){ alert('Введите mailId'); return; }
-      if(PROXY_URL.includes('your-cf-worker')){
-        resultBox.textContent = 'Ошибка: PROXY_URL не настроен. Разверните Worker и укажите реальный URL в скрипте.';
+    async function getCode() {
+      const mailId = document.getElementById('mailId').value;
+      if (!mailId) {
+        alert('Введите mailId');
         return;
       }
-
-      resultBox.textContent = 'Загрузка...';
-      try{
-        const url = `${PROXY_URL}?mailId=${encodeURIComponent(mailId)}`;
-        log('Запрос -> ' + url);
-        const res = await fetch(url, { method: 'GET' });
-        if(!res.ok) throw new Error('HTTP ' + res.status);
+      const url = `${PROXY_URL}?mailId=${encodeURIComponent(mailId)}`;
+      try {
+        const res = await fetch(url);
         const data = await res.json();
-        resultBox.textContent = JSON.stringify(data, null, 2);
-        log('Успешно: получен ответ.');
-      }catch(err){
-        resultBox.textContent = 'Ошибка: ' + err.message;
-        log('Ошибка: ' + err.message);
+        document.getElementById('result').innerText = data.code ? `Код: ${data.code}` : 'Код не найден';
+      } catch (err) {
+        document.getElementById('result').innerText = 'Ошибка при получении кода';
       }
     }
   </script>
-
-  <!--
-  -------------------- Cloudflare Worker: worker.js --------------------
-  Deploy this Worker and bind it to a route or a custom domain. It will forward requests to the SMS API
-  and add CORS headers so the browser can call it.
-
-  Example usage: https://your-worker.example.workers.dev/api/getCode?mailId=123
-  ------------------------------------------------------------------------
-  
-  // worker.js
-  addEventListener('fetch', event => {
-    event.respondWith(handle(event.request));
-  });
-
-  async function handle(request){
-    const url = new URL(request.url);
-    // Allow only GET to /api/getCode
-    if(url.pathname !== '/api/getCode') return new Response('Not found', {status:404});
-
-    const mailId = url.searchParams.get('mailId');
-    if(!mailId) return jsonResponse({error:'mailId required'}, 400);
-
-    // Forward to the real API
-    const apiKey = '3QXiCWhnsKxYnqdyI8wgQOju7DX7LXsR'; // consider storing in Workers secret in production
-    const target = `https://smsbower.online/api/mail/getCode?api_key=${apiKey}&mailId=${encodeURIComponent(mailId)}`;
-
-    try{
-      const resp = await fetch(target, { method: 'GET' });
-      const text = await resp.text();
-      // Try to parse JSON, otherwise return text
-      let body;
-      try{ body = JSON.parse(text); } catch(e){ body = {raw: text}; }
-      return new Response(JSON.stringify(body), {
-        status: resp.status,
-        headers: {
-          'Content-Type':'application/json;charset=utf-8',
-          'Access-Control-Allow-Origin':'*',
-          'Access-Control-Allow-Methods':'GET,OPTIONS',
-          'Access-Control-Allow-Headers':'*'
-        }
-      });
-    }catch(err){
-      return jsonResponse({error:err.message}, 502);
-    }
-  }
-
-  function jsonResponse(obj, status=200){
-    return new Response(JSON.stringify(obj), {status, headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}});
-  }
-
-  ------------------------------------------------------------------------
-  Deployment quick steps:
-  1) Create a GitHub repo and push this index.html as root.
-  2) Enable GitHub Pages from 'main' branch -> / (root).
-  3) Sign up to Cloudflare Workers (free tier) and create a new Worker. Paste the worker.js code.
-  4) Configure route (or use the *.workers.dev URL). Copy that Worker URL and set PROXY_URL in the index.html script.
-  5) Open your GitHub Pages site and test.
-
-  Security notes:
-  - Do NOT put private API keys in client JS. Use the Worker to keep the API key secret (or use Workers secrets).
-  - Limit allowed origins and add rate-limiting if exposing to public.
-  -->
-
 </body>
 </html>
