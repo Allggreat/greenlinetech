@@ -5,24 +5,21 @@
 <title>Копирование...</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
+(async () => {
+  Telegram.WebApp.ready();
   const params = new URLSearchParams(window.location.search);
   const text = params.get("text") || "Нечего копировать";
 
-  // Пытаемся скопировать сразу при загрузке
-  async function copyToClipboard() {
-    try {
-      await navigator.clipboard.writeText(text);
-      document.body.innerHTML = "<h2>✅ Сообщение скопировано!</h2>";
-    } catch (err) {
-      document.body.innerHTML = `<h2>❌ Ошибка: ${err.message}</h2>`;
-    }
-    setTimeout(() => Telegram.WebApp.close(), 1500);
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (e) {
+    console.error("Ошибка копирования:", e);
   }
 
-  window.onload = copyToClipboard;
+  // Закрываем мгновенно, без задержки
+  Telegram.WebApp.close();
+})();
 </script>
 </head>
-<body style="text-align:center;font-family:sans-serif;padding-top:50px;">
-  <h2>Копируем...</h2>
-</body>
+<body></body>
 </html>
