@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Копирование...</title>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const text = params.get("text") || "Нечего копировать";
+  navigator.clipboard.writeText(text).then(() => {
+    document.body.innerHTML = "<h2>✅ Сообщение скопировано!</h2>";
+    setTimeout(() => Telegram.WebApp.close(), 1500);
+  });
+</script>
+</head>
+<body style="text-align:center;font-family:sans-serif;padding-top:50px;">
+  <h2>Копируем...</h2>
+</body>
+</html>
