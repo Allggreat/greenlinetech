@@ -2,17 +2,55 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Копирование...</title>
-<script>
-  const params = new URLSearchParams(window.location.search);
-  const text = params.get("text") || "Нечего копировать";
-  navigator.clipboard.writeText(text).then(() => {
-    document.body.innerHTML = "<h2>✅ Сообщение скопировано!</h2>";
-    setTimeout(() => Telegram.WebApp.close(), 1500);
-  });
-</script>
+<title>Копирование сообщения</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  .message-box {
+    background: #f2f2f2;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    white-space: pre-line;
+  }
+  button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #45a049;
+  }
+</style>
 </head>
-<body style="text-align:center;font-family:sans-serif;padding-top:50px;">
-  <h2>Копируем...</h2>
+<body>
+  <div id="message" class="message-box"></div>
+  <button id="copyBtn">📋 Скопировать сообщение</button>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const text = params.get("text") || "Нечего копировать";
+
+    document.getElementById("message").innerText = text;
+
+    const btn = document.getElementById("copyBtn");
+    btn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = "✅ Скопировано!";
+        setTimeout(() => Telegram.WebApp?.close?.(), 1500);
+      } catch (err) {
+        btn.textContent = "❌ Ошибка копирования";
+        console.error(err);
+      }
+    });
+  </script>
 </body>
 </html>
